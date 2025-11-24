@@ -27,26 +27,36 @@ public class GenerateAst {
         writer.println("import java.util.List;");
         writer.println();
         writer.println("abstract class " + baseName + " {");
+
+        defineVisitor(writer, baseName, types);
         for(String type : types){
             String className = type.split(":")[0].trim();
             String fields = type.split(":")[1].trim();
             defineType(writer, baseName, className, fields);
         }
+        writer.println();
+        writer.println("\t abstract <R> R accept(Visitor<R> visitor);");
         writer.println("}");
         writer.close();
     }
 
     private static void defineType(PrintWriter writer, String baseName, String className, String fieldList){
-        writer.println("    static class " + className + " extends " + baseName + " {");
+        writer.println("\t static class " + className + " extends " + baseName + " {");
 
         // Constructor
-        writer.println("    " + className + "(" + fieldList + ")" + "{");
+        writer.println("\t" + className + "(" + fieldList + ")" + "{");
         String[] fields = fieldList.split(", ");
         for(String field : fields){
             String name = field.split(" ")[1];
-            writer.println("    this." + name + " = " + name + ";");
+            writer.println("\t \t this." + name + " = " + name + ";");
         }
-        writer.println("    }");
+        writer.println("\t \t }");
+
+        writer.println();
+        writer.println("\t \t @Override");
+        writer.println("\t \t <R> R accept(Visitor<R> visitor) {");
+        writer.println("\t \t \t return visitor.visit" + className + baseName + "(this);");
+        writer.println("\t \t }");
 
         // Fields.
         writer.println();
@@ -55,5 +65,18 @@ public class GenerateAst {
         }
 
         writer.println("    }");
+
     }
+
+    private static void defineVisitor(PrintWriter writer, String baseName, List<String> types){
+        writer.println("\t interface Visitor<R> {");
+        for( String type: types){
+            String typeName = type.split(":")[0].trim();
+            writer.println("\t R visit" + typeName +
+                    baseName + "(" + typeName + " " +
+                    baseName.toLowerCase() + ");");
+        }
+        writer.println("\t }");
+    }
+
 }
